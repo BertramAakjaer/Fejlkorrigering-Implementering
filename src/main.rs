@@ -69,17 +69,78 @@ fn implement_all_error_correction(all_files: &mut Vec<data_classes::DataHolder>)
         Ok(_) => (),
         Err(e) => eprintln!("Failed to save data: {}", e),
     }
+
+    match data_manipulator::apply_three_copies(all_files.last_mut().unwrap()) {
+        Ok(_) => (),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+    }
+
+    match data_manipulator::apply_checksum(all_files.last_mut().unwrap()) {
+        Ok(_) => (),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+    }
+}
+
+
+
+
+fn flip_bits(all_files: &mut Vec<data_classes::DataHolder>, bits_to_change: u32) -> () {
+    match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("parity_bit"), bits_to_change) {
+        Ok(_) => all_files.last_mut().unwrap().set_data_modified("parity_bit"),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+    }
+
+    match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("three_copies"), bits_to_change) {
+        Ok(_) => all_files.last_mut().unwrap().set_data_modified("three_copies"),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+    }
+
+    match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("checksum"), bits_to_change) {
+        Ok(_) => all_files.last_mut().unwrap().set_data_modified("checksum"),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+        
+    }
+}
+
+
+
+
+
+fn show_and_check_paritybit(all_files: &mut Vec<data_classes::DataHolder>) -> () {
+    println!("Paritets bit tjek :");
+    for i in data_manipulator::check_paritybit(all_files.last_mut().unwrap().get_data_file_path("parity_bit")) {
+        println!("-\t{}", i);
+    }
+}
+
+fn show_and_check_three_copies(all_files: &mut Vec<data_classes::DataHolder>) -> () {
+    println!("Tre kopier tjek :");
+    for i in data_manipulator::check_three_copies(all_files.last_mut().unwrap().get_data_file_path("three_copies")) {
+        println!("-\t{}", i);
+    }
+}
+
+fn show_and_check_checksum(all_files: &mut Vec<data_classes::DataHolder>) -> () {
+    println!("Kontrolsum tjek :");
+    for i in data_manipulator::check_checksum(all_files.last_mut().unwrap().get_data_file_path("checksum")) {
+        println!("-\t{}", i);
+    }
 }
 
 fn main() {
+
+    // Rydder konsollen og sletter tidligere filer
     clear_all_files();
     clear_console();
     print_header();
 
+    let mut iteration_count = 0;
+
+    // Loop der kører programmet
     loop {
         let mut all_files: Vec<data_classes::DataHolder> = vec![];
 
-        let file_name = format!("data_file[{}]", all_files.len());
+        let file_name = format!("data_file[{}]", iteration_count);
         let file_name = file_name.as_str();
 
         println!("\nSkriv en sætning der skal gemmes i filen :");
@@ -89,8 +150,8 @@ fn main() {
     
         implement_all_error_correction(&mut all_files);
 
-
-        println!("Enter the number of bits to change:");
+        
+        println!("Skriv det antal bits der skal ændres :");
 
         let mut bits_to_change = String::new();
         io::stdin().read_line(&mut bits_to_change).expect("Failed to read line");
@@ -99,16 +160,48 @@ fn main() {
         println!(" ");
 
 
+        println!("###########################################################");
+        println!("##  Benytter fejlkorrigering på data efter flippet bits  ##");
+        println!("###########################################################");
+        println!(" ");
 
-        match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("parity_bit"), bits_to_change) {
-            Ok(_) => all_files.last_mut().unwrap().set_data_modified("parity_bit"),
-            Err(e) => eprintln!("Failed to save data: {}", e),
-        }
+
+
+        flip_bits(&mut all_files, bits_to_change);
+
+
+
+
+        show_and_check_paritybit(&mut all_files);
+
+        println!(" ");
+
+        show_and_check_checksum(&mut all_files);
         
-        println!("Parity bit check:");
-        for i in data_manipulator::check_paritybit(all_files.last_mut().unwrap().get_data_file_path("parity_bit")) {
-            println!("-\t{}", i);
+        println!(" ");
+        
+        show_and_check_three_copies(&mut all_files);
+
+
+
+
+
+
+        // Spørger bruger om loop'et skal stoppes
+
+        println!("\n**Vil du fortsætte (Y/n)** :");
+
+        let mut choice = String::new();
+        io::stdin().read_line(&mut choice).expect("Failed to read line");
+        let choice: String = choice.trim().parse().expect("Please enter a valid number");
+
+        if choice.to_lowercase() == "n" {
+            break;
         }
-        break;
+
+        iteration_count += 1;
+
+        clear_console();
+
     }
 }

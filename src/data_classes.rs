@@ -59,10 +59,6 @@ impl DataHolder {
             _ => (),
         }
     }
-
-    pub fn get_file_name(&self) -> &str {
-        &self.file_name
-    }
 }
 
 
