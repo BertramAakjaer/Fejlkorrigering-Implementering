@@ -17,7 +17,7 @@ Programmet gemmer filerne med fejlkorrigerings indkodning lokalt på computeren 
 - **Hamming Koder** (.hak)
 
 ##  **Installation**
->  **Vigtigt**     
+> [!NOTE]
 >  For at køre dette projekt skal du have [Rust installeret](https://www.rust-lang.org/tools/install) (Projektet blev lavet med version 1.82.0).
 
 ### **Følg disse trin for at køre projektet direkte i rust:**
