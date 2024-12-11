@@ -395,7 +395,8 @@ fn hamming_code_byte_corrector(byte: u8) -> u8 {
     }
     */
 
-    return (new_byte ^= byte); // Returnere den rettede byte, hvilket er den ene flippede bit insat i den originale byte
+    new_byte ^= byte;
+    new_byte // Returnere den rettede byte, hvilket er den ene flippede bit indsat i den originale byte
 }
 
 
