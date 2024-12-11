@@ -1,7 +1,8 @@
 use std::io;
 use std::fs;
-use figlet_rs::FIGfont; // Til 
+use figlet_rs::FIGfont; // Til overskrift der vises i konsollen
 
+// De andre filer indlæses
 mod data_manipulator;
 mod data_classes;
 
@@ -17,14 +18,16 @@ mod data_classes;
     Hamming Koder : .hak
 */
 
+// Funktion til at oprette den originale fil, der holder uændret data
 fn create_txt_file(files: &mut Vec<data_classes::DataHolder>, file_name: &str) -> () {
-
     let mut choice = String::new();
 
+    // Læser input fra brugeren, til at gemme i filen
     io::stdin().read_line(&mut choice).expect("Kunne ikke indlæse input");
     let input_string: String = choice.trim().parse().expect("Det skal være bogstaver");
     println!();
 
+    // Laver en ny objekt af DataHolder og tilføjer den til listen
     match data_manipulator::save_as_binary(&input_string, format!("output/{}.txt", &file_name).as_str()) {
         Ok(_) => {
             files.push(data_classes::DataHolder::new(format!("{}", &file_name)));
@@ -32,29 +35,32 @@ fn create_txt_file(files: &mut Vec<data_classes::DataHolder>, file_name: &str) -
         },
         Err(e) => eprintln!("Denne data kunne ikke gemmes: {}", e),
     }
-
 }
 
+// Sletter alle filer i output mappen
 fn clear_all_files() -> () {
     let directory = "output";
+
     match fs::read_dir(directory) {
         Ok(entries) => {
             for entry in entries {
-                let entry = entry.expect("Failed to read entry");
+                let entry = entry.expect("Filen kunne ikke læses");
                 let path = entry.path();
                 if path.is_file() && !path.ends_with(".gitkeep") {
-                    fs::remove_file(path).expect("Failed to delete file");
+                    fs::remove_file(path).expect("Filen kunne ikke slettes");
                 }
             }
         }
-        Err(e) => eprintln!("Failed to read directory: {}", e),
+        Err(e) => eprintln!("Kunne ikke læse mappen: {}", e),
     }
 }
 
+// Rydder konsollen
 fn clear_console() -> () {
     print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
 }
 
+// Printer overskriften, ved brug af figlet
 fn print_header() -> () {
     let text = "Fejlkorrigering";
     let standard_font = FIGfont::standard().unwrap();
@@ -64,6 +70,8 @@ fn print_header() -> () {
     }
 }
 
+
+// Samler alle funktionkald til at implementere fejlkorrigering 
 fn implement_all_error_correction(all_files: &mut Vec<data_classes::DataHolder>) -> (){
     match data_manipulator::apply_paritybit(all_files.last_mut().unwrap()) {
         Ok(_) => (),
@@ -79,11 +87,15 @@ fn implement_all_error_correction(all_files: &mut Vec<data_classes::DataHolder>)
         Ok(_) => (),
         Err(e) => eprintln!("Failed to save data: {}", e),
     }
+
+    match data_manipulator::apply_hamming_code(all_files.last_mut().unwrap()) {
+        Ok(_) => (),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+    }
 }
 
 
-
-
+// Samler alle funktionkald til at flippe bits i fejlkorrigerings filerne
 fn flip_bits(all_files: &mut Vec<data_classes::DataHolder>, bits_to_change: u32) -> () {
     match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("parity_bit"), bits_to_change) {
         Ok(_) => all_files.last_mut().unwrap().set_data_modified("parity_bit"),
@@ -100,11 +112,19 @@ fn flip_bits(all_files: &mut Vec<data_classes::DataHolder>, bits_to_change: u32)
         Err(e) => eprintln!("Failed to save data: {}", e),
         
     }
+
+    match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("hamming_code"), bits_to_change) {
+        Ok(_) => all_files.last_mut().unwrap().set_data_modified("hamming_code"),
+        Err(e) => eprintln!("Failed to save data: {}", e),
+    }
 }
 
 
-
-
+/*
+    Fire funktioner der tjekker om fejlkorrigeringen har virket,
+    ved at udnytte det der blev implementeret tidligere, her 
+    kalder funktioner i data_manipulator.rs
+*/
 
 fn show_and_check_paritybit(all_files: &mut Vec<data_classes::DataHolder>) -> () {
     println!("Paritets bit tjek :");
@@ -127,6 +147,15 @@ fn show_and_check_checksum(all_files: &mut Vec<data_classes::DataHolder>) -> () 
     }
 }
 
+fn show_and_check_hamming_code(all_files: &mut Vec<data_classes::DataHolder>) -> () {
+    println!("Hamming kode tjek :");
+    for i in data_manipulator::check_hamming_code(all_files.last_mut().unwrap().get_data_file_path("hamming_code")) {
+        println!("-\t{}", i);
+    }
+}
+
+
+// Main funktionen, der looper til det bliver stopper
 fn main() {
 
     // Rydder konsollen og sletter tidligere filer
@@ -135,6 +164,7 @@ fn main() {
     print_header();
 
     let mut iteration_count = 0;
+
 
     // Loop der kører programmet
     loop {
@@ -151,6 +181,8 @@ fn main() {
         implement_all_error_correction(&mut all_files);
 
         
+
+
         println!("Skriv det antal bits der skal ændres :");
 
         let mut bits_to_change = String::new();
@@ -166,11 +198,11 @@ fn main() {
         println!(" ");
 
 
-
+        // flipper tilfældige bits i de forskellige filer
         flip_bits(&mut all_files, bits_to_change);
 
 
-
+        // Viser alle fejlkorrigeringernes resultater
 
         show_and_check_paritybit(&mut all_files);
 
@@ -182,14 +214,13 @@ fn main() {
         
         show_and_check_three_copies(&mut all_files);
 
+        println!(" ");
+
+        show_and_check_hamming_code(&mut all_files);
 
 
 
-
-
-        // Spørger bruger om loop'et skal stoppes
-
-        println!("\n**Vil du fortsætte (Y/n)** :");
+        println!("\n**Vil du fortsætte (Y/n)** :"); // Spørger bruger om loop'et skal stoppes
 
         let mut choice = String::new();
         io::stdin().read_line(&mut choice).expect("Failed to read line");
@@ -199,9 +230,9 @@ fn main() {
             break;
         }
 
+        // Bruges til at holde styr på iterationer, så de ældre filer også gemmes og ikke overskrives
         iteration_count += 1;
 
         clear_console();
-
     }
 }
