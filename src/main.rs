@@ -110,7 +110,6 @@ fn flip_bits(all_files: &mut Vec<data_classes::DataHolder>, bits_to_change: u32)
     match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("checksum"), bits_to_change) {
         Ok(_) => all_files.last_mut().unwrap().set_data_modified("checksum"),
         Err(e) => eprintln!("Failed to save data: {}", e),
-        
     }
 
     match data_manipulator::random_bit_flipper(all_files.last_mut().unwrap().get_data_file_path("hamming_code"), bits_to_change) {
