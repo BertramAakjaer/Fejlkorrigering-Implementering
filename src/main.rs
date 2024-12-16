@@ -179,8 +179,6 @@ fn main() {
     
         implement_all_error_correction(&mut all_files);
 
-        
-
 
         println!("Skriv det antal bits der skal ændres :");
 
